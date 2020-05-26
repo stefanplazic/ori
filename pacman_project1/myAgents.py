@@ -23,13 +23,28 @@ IMPORTANT
 `agent` defines which agent you will use. By default, it is set to ClosestDotAgent,
 but when you're ready to test your own agent, replace it with MyAgent
 """
-def createAgents(num_pacmen, agent='ClosestDotAgent'):
+def createAgents(num_pacmen, agent='MyAgent'):
     return [eval(agent)(index=i) for i in range(num_pacmen)]
 
 class MyAgent(Agent):
     """
     Implementation of your agent.
     """
+
+    def findFoodPath(self, gameState):
+        """
+        Returns a path (a list of actions) to the closest dot, starting from
+        gameState.
+        """
+        # Here are some useful elements of the startState
+        startPosition = gameState.getPacmanPosition(self.index)
+        food = gameState.getFood()
+        walls = gameState.getWalls()
+        problem = AnyFoodSearchProblem(gameState, self.index)
+
+        "*** YOUR CODE HERE ***"
+        actions = search.aStarSearch(problem)
+        return actions
 
     def getAction(self, state):
         """
@@ -38,7 +53,7 @@ class MyAgent(Agent):
 
         "*** YOUR CODE HERE ***"
 
-        return self.findPathToClosestDot(state)[0]
+        return self.findFoodPath(state)[0]
 
     def initialize(self):
         """
@@ -48,8 +63,6 @@ class MyAgent(Agent):
         """
 
         "*** YOUR CODE HERE"
-
-        raise NotImplementedError()
 
 """
 Put any other SearchProblems or search methods below. You may also import classes/methods in
@@ -70,7 +83,7 @@ class ClosestDotAgent(Agent):
         problem = AnyFoodSearchProblem(gameState, self.index)
 
         "*** YOUR CODE HERE ***"
-        actions = search.breadthFirstSearch(problem)
+        actions = search.aStarSearch(problem)
         return actions
 
     def getAction(self, state):

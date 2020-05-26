@@ -140,7 +140,6 @@ def uniformCostSearch(problem):
     visitedNodes = []
 
     pQueue = util.PriorityQueue()
-    #((coordinate/node , action to current node , cost to current node),priority)
     pQueue.push((startingNode, [], 0), 0)
 
     while not pQueue.isEmpty():
