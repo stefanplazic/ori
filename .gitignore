@@ -136,3 +136,6 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# traning and test images
+rendgen_project/chest_xray_data_set/
