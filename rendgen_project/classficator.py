@@ -13,6 +13,8 @@ IMAGE_WIDTH=128
 IMAGE_HEIGHT=128
 IMAGE_SIZE=(IMAGE_WIDTH, IMAGE_HEIGHT)
 IMAGE_CHANNELS=3
+BATCH_SIZE=15
+EPOCHS=6
 
 def load_data(file_uri='./chest_xray_metadata.csv'):
 	csv_data = pd.read_csv(file_uri)
@@ -31,13 +33,13 @@ def plot_data(csv_data):
 
 def _apply_label(row):
 	if row['Label'] == 'Normal' :
-		return 0
+		return '0'
 
 	if row['Label_1_Virus_category'] == 'Virus':
-		return 1
+		return '1'
 
 	if row['Label_1_Virus_category'] == 'bacteria':
-		return 2
+		return '2'
 
 def generate_train_test_data(csv_data):
 	train_data, test_data = train_test_split(csv_data, test_size=0.20, random_state=42)
@@ -48,10 +50,16 @@ def generate_train_test_data(csv_data):
 def generate_model():
 	model = Sequential()
 	model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS)))
+	model.save_weights("model.h5")
 	model.add(MaxPooling2D(pool_size=(2, 2)))
 	model.add(Dropout(0.25))
 
 	model.add(Conv2D(64, (3, 3), activation='relu'))
+	model.add(BatchNormalization())
+	model.add(MaxPooling2D(pool_size=(2, 2)))
+	model.add(Dropout(0.25))
+
+	model.add(Conv2D(128, (3, 3), activation='relu'))
 	model.add(BatchNormalization())
 	model.add(MaxPooling2D(pool_size=(2, 2)))
 	model.add(Dropout(0.25))
@@ -66,8 +74,16 @@ def generate_model():
 
 	return model
 
-def show_images():
-	pass
+def fit_model(model,train_generator,test_generator, total_train, total_test):
+	history = model.fit_generator(
+	    train_generator, 
+	    epochs=EPOCHS,
+	    validation_data=test_generator,
+	    validation_steps=total_test//BATCH_SIZE,
+	    steps_per_epoch=total_train//BATCH_SIZE
+	)
+	model.save_weights("model.h5")
+	return history
 
 def preprocess_images(dir_path='./chest_xray_data_set', output_dir_path='./resized_images'):
 	files = os.listdir(dir_path)
@@ -78,8 +94,45 @@ def preprocess_images(dir_path='./chest_xray_data_set', output_dir_path='./resiz
 	print('-'*50)
 	print('Finished resizing images')
 
+def train_generator(data):
+	data_gen = ImageDataGenerator(
+    rotation_range=15,
+    rescale=1./255,
+    shear_range=0.1,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    width_shift_range=0.1,
+    height_shift_range=0.1
+	)
+	data_generator = data_gen.flow_from_dataframe(
+    data, 
+    "./resized_images", 
+    x_col='X_ray_image_name',
+    y_col='data_label',
+    target_size=IMAGE_SIZE,
+    class_mode='categorical',
+    batch_size=BATCH_SIZE
+	)
+	return data_generator
+
+def validation_generator(data):
+	validation_gen = ImageDataGenerator(rescale=1./255)
+	validation_generator = validation_gen.flow_from_dataframe(
+    data, 
+    "./resized_images", 
+    x_col='X_ray_image_name',
+    y_col='data_label',
+    target_size=IMAGE_SIZE,
+    class_mode='categorical',
+    batch_size=BATCH_SIZE
+	)
+	return validation_generator
+
 if __name__ == "__main__":
 	csv_data = load_data()
 	model = generate_model()
 	train_data, test_data = generate_train_test_data(csv_data)
-	print(train_data.tail())
+	train_generator = train_generator(train_data)
+	test_generator = validation_generator(test_data)
+	history = fit_model(model, train_generator, test_generator, train_data.shape[0], test_data.shape[0])
+	print(history)
