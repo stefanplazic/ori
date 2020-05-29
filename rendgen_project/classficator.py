@@ -13,8 +13,23 @@ IMAGE_SIZE=(IMAGE_WIDTH, IMAGE_HEIGHT)
 IMAGE_CHANNELS=3
 
 def load_data(file_uri='./chest_xray_metadata.csv'):
-	csv_data = pd.read_csv(file_uri) 
-	print(csv_data.head())
+	csv_data = pd.read_csv(file_uri)
+	csv_data['data_label'] = csv_data.apply (lambda row: _apply_label(row), axis=1)
+	return csv_data
+
+def plot_data(csv_data):
+	csv_data['data_label'].value_counts().plot.bar()
+	plt.show()
+
+def _apply_label(row):
+	if row['Label'] == 'Normal' :
+		return 0
+
+	if row['Label_1_Virus_category'] == 'Virus':
+		return 1
+
+	if row['Label_1_Virus_category'] == 'bacteria':
+		return 2
 
 def generate_train_test_data():
 	pass
@@ -35,4 +50,6 @@ def preprocess_images(dir_path='./chest_xray_data_set', output_dir_path='./resiz
 	print('Finished resizing images')
 
 if __name__ == "__main__":
-	preprocess_images()
+	#preprocess_images()
+	csv_data = load_data()
+	plot_data(csv_data)
