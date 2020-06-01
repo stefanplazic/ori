@@ -13,8 +13,8 @@ IMAGE_WIDTH=128
 IMAGE_HEIGHT=128
 IMAGE_SIZE=(IMAGE_WIDTH, IMAGE_HEIGHT)
 IMAGE_CHANNELS=3
-BATCH_SIZE=60
-EPOCHS=10
+BATCH_SIZE=70
+EPOCHS=15
 
 def load_data(file_uri='./chest_xray_metadata.csv'):
 	csv_data = pd.read_csv(file_uri)
@@ -42,10 +42,12 @@ def _apply_label(row):
 		return '2'
 
 def generate_train_test_data(csv_data):
-	train_data, test_data = train_test_split(csv_data, test_size=0.20, random_state=42)
+	temp_data, test_data = train_test_split(csv_data, test_size=0.10, random_state=42)
+	train_data, validation_data = train_test_split(temp_data, test_size=0.10, random_state=42)
 	train_data = train_data.reset_index(drop=True)
 	test_data = test_data.reset_index(drop=True)
-	return (train_data, test_data)
+	validation_data = validation_data.reset_index(drop=True)
+	return (train_data, test_data, validation_data)
 
 def generate_model():
 	model = Sequential()
@@ -131,8 +133,12 @@ def validation_generator(data):
 if __name__ == "__main__":
 	csv_data = load_data()
 	model = generate_model()
-	train_data, test_data = generate_train_test_data(csv_data)
+	train_data, test_data, validation_data = generate_train_test_data(csv_data)
 	train_generator = train_generator(train_data)
 	test_generator = validation_generator(test_data)
-	history = fit_model(model, train_generator, test_generator, train_data.shape[0], test_data.shape[0])
+	validation_generator = validation_generator(validation_data)
+	history = fit_model(model, train_generator, validation_generator, train_data.shape[0], test_data.shape[0])
 	print(history)
+	loss, acc = model.evaluate_generator(test_generator)
+	print('*'*20)
+	print(acc)
