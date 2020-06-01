@@ -13,8 +13,8 @@ IMAGE_WIDTH=128
 IMAGE_HEIGHT=128
 IMAGE_SIZE=(IMAGE_WIDTH, IMAGE_HEIGHT)
 IMAGE_CHANNELS=3
-BATCH_SIZE=15
-EPOCHS=6
+BATCH_SIZE=60
+EPOCHS=10
 
 def load_data(file_uri='./chest_xray_metadata.csv'):
 	csv_data = pd.read_csv(file_uri)
@@ -70,7 +70,7 @@ def generate_model():
 	model.add(Dropout(0.5))
 	model.add(Dense(3, activation='softmax'))
 
-	model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+	model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 	return model
 
