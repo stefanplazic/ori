@@ -1,0 +1,5 @@
+GROUPS:
+0. Ova grupa koristi  karticu za jednokratnu kupovinu.
+1.Ova grupa ima minimalan balans i uplacuje samo unapred.
+2.Ova grupa najcesce vrsi kupovinu na rate.
+3. Ova grupa ima  najveci iznos potrosen na kupovinu na rate.

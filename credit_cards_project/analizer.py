@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn import preprocessing
 
-cluster_number = 8
+cluster_number = 4
 
 def load_data(dataPath='./credit_card_data.csv'):
 	credit_data = pd.read_csv(dataPath)
@@ -24,11 +24,11 @@ def normilize_data(credit_data):
 
 '''
 method for finding optimal cluser number
-in this case it's 8
+in this case it's 4
 '''
 def elbow(credit_data):
 	sum_of_distances = []
-	K = range(1,20)
+	K = range(1,10)
 	for k in K:
 		km = KMeans(n_clusters=k)
 		km = km.fit(credit_data)
@@ -56,7 +56,7 @@ def plot_clusters(credit_data, cluster_num=8):
 	plt.scatter(centroids[:, 0], centroids[:, 1], c='red', s=50)
 	plt.show()
 
-def predict_clusters(train,test, cluster_num=8):
+def predict_clusters(train,test, cluster_num):
 	X = np.array(train)
 	X_test = np.array(test)
 	kmeans = KMeans(n_clusters=cluster_num, random_state=0).fit(X)
@@ -65,12 +65,14 @@ def predict_clusters(train,test, cluster_num=8):
 	
 def summery(data):
 	train_summary = data.groupby(by='CLUSTER_PREDICTION').mean()
+	'''
 	train_summary = train_summary[['BALANCE', 'PURCHASES', 
                                'PURCHASES_FREQUENCY','CREDIT_LIMIT', 
                                'ONEOFF_PURCHASES_FREQUENCY', 
                               'MINIMUM_PAYMENTS','PRC_FULL_PAYMENT', 
                                'PAYMENTS']]
-	print(train_summary)
+    '''
+	train_summary.to_csv('result.csv')
 
 def find_correlation(credit_data):
 	df = DataFrame(credit_data,columns=['BALANCE','PURCHASES','BALANCEFREQUENCY','CASHADVANCE','CREDIT_LIMIT','CASH_ADVANCE_FREQUENCY','MINIMUM_PAYMENTS'])
@@ -81,7 +83,7 @@ if __name__ == "__main__":
 	credit_data = load_data()
 	credit_data = clean_data(credit_data)
 	credit_data = normilize_data(credit_data)
-	#elbow(credit_data)
+	elbow(credit_data)
 	train,test = split_data(credit_data)
 	plot_clusters(credit_data, cluster_number)
 	prediction = predict_clusters(train,test,cluster_number)
