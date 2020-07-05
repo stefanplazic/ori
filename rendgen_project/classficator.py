@@ -25,7 +25,7 @@ def load_data(file_uri='./chest_xray_metadata.csv'):
 	csv_data = csv_data.drop('Label_2_Virus_category', 1)
 	csv_data = csv_data.drop('Label_1_Virus_category', 1)
 
-	return csv_data
+	return csv_data.dropna()
 
 def plot_data(csv_data):
 	csv_data['data_label'].value_counts().plot.bar()
@@ -42,17 +42,14 @@ def _apply_label(row):
 		return '2'
 
 def generate_train_test_data(csv_data):
-	temp_data, test_data = train_test_split(csv_data, test_size=0.10, random_state=42)
-	train_data, validation_data = train_test_split(temp_data, test_size=0.10, random_state=42)
+	train_data, validation_data = train_test_split(csv_data, test_size=0.10, random_state=42)
 	train_data = train_data.reset_index(drop=True)
-	test_data = test_data.reset_index(drop=True)
 	validation_data = validation_data.reset_index(drop=True)
-	return (train_data, test_data, validation_data)
+	return (train_data, validation_data)
 
 def generate_model():
 	model = Sequential()
 	model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS)))
-	model.save_weights("model.h5")
 	model.add(MaxPooling2D(pool_size=(2, 2)))
 	model.add(Dropout(0.25))
 
@@ -73,7 +70,8 @@ def generate_model():
 	model.add(Dense(3, activation='softmax'))
 
 	model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-
+	if os.path.exists("model.h5"):
+		model.load_weights("model.h5")
 	return model
 
 def fit_model(model,train_generator,test_generator, total_train, total_test):
@@ -117,11 +115,11 @@ def train_generator(data):
 	)
 	return data_generator
 
-def validation_generator(data):
+def validation_generator(data,image_path):
 	validation_gen = ImageDataGenerator(rescale=1./255)
 	validation_generator = validation_gen.flow_from_dataframe(
     data, 
-    "./resized_images", 
+    image_path, 
     x_col='X_ray_image_name',
     y_col='data_label',
     target_size=IMAGE_SIZE,
@@ -130,15 +128,34 @@ def validation_generator(data):
 	)
 	return validation_generator
 
+def test_generator(data,image_path):
+	test_gen = ImageDataGenerator(rescale=1./255)
+	test_generator = test_gen.flow_from_dataframe(
+    data, 
+    image_path, 
+    x_col='X_ray_image_name',
+    y_col='data_label',
+    target_size=IMAGE_SIZE,
+    class_mode='categorical',
+    batch_size=BATCH_SIZE
+	)
+	return test_generator
+
 if __name__ == "__main__":
 	csv_data = load_data()
+	test_data = load_data('./resized_test_images/chest_xray_test_dataset.csv')
+	test_data = test_data.reset_index(drop=True)
 	model = generate_model()
-	train_data, test_data, validation_data = generate_train_test_data(csv_data)
+	train_data, validation_data = generate_train_test_data(csv_data)
+	print(test_data)
+	print(train_data)
+	
 	train_generator = train_generator(train_data)
-	test_generator = validation_generator(test_data)
-	validation_generator = validation_generator(validation_data)
-	history = fit_model(model, train_generator, validation_generator, train_data.shape[0], test_data.shape[0])
-	print(history)
+	validation_generator = validation_generator(validation_data,"./resized_images")
+	test_generator = test_generator(test_data,"./resized_test_images/test")
+	#history = fit_model(model, train_generator, validation_generator, train_data.shape[0], test_data.shape[0])
+	#print(history)
 	loss, acc = model.evaluate_generator(test_generator)
 	print('*'*20)
 	print(acc)
+	

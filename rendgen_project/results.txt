@@ -1,0 +1,2 @@
+Preciznost za trening i validacioni skup: 0.6698172688484192
+Preciznost za test skup: 0.6212607026100159
